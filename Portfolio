@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Thanav Amaravadi — ASCII World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07080b;--fg:#c9d1d9;--dim:#4b5263;--dimmer:#282d38;
+    --accent:#5eead4;--accent2:#818cf8;--gold:#fbbf24;--player:#5eead4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--fg);
+    font-family:'JetBrains Mono',monospace;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100vh;overflow:hidden;padding:10px;-webkit-user-select:none;user-select:none;
+  }
+  ::selection{background:var(--accent);color:#04110d}
+  /* ===== ASCII banner heading ===== */
+  #head{width:100%;max-width:920px;margin-bottom:10px;padding:0 2px}
+  #banner{
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    font-size:clamp(6px,1.35vw,12px);line-height:1.0;white-space:pre;margin:0;
+    color:var(--accent);
+    text-shadow:0 0 8px rgba(94,234,212,.45),0 0 22px rgba(94,234,212,.18);
+    animation:flicker 6s infinite;
+  }
+  /* first-load draw-in */
+  #banner span.g{color:var(--accent)}
+  @keyframes flicker{
+    0%,100%{opacity:1}
+    48%{opacity:1}49%{opacity:.72}50%{opacity:1}
+    72%{opacity:1}73%{opacity:.8}74%{opacity:1}
+  }
+  #statusbar{
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+    margin-top:8px;padding:8px 12px;border:1px solid var(--dimmer);border-radius:8px;
+    background:linear-gradient(90deg,rgba(94,234,212,.05),transparent 60%);
+    font-size:clamp(10px,1.6vw,13px);color:var(--dim);letter-spacing:.02em;
+  }
+  #statusbar .id{color:var(--fg)}
+  #statusbar .id .tag{color:var(--accent2)}
+  #statusbar .sep{color:var(--dimmer);margin:0 8px}
+  #statusbar .role{color:var(--dim)}
+  #statusbar .role b{color:var(--fg);font-weight:500}
+  #statusbar .stat{color:var(--accent);font-weight:500}
+  #statusbar .led{
+    display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--accent);margin-right:5px;vertical-align:middle;
+    box-shadow:0 0 6px var(--accent);animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px var(--accent)}50%{opacity:.4;box-shadow:0 0 2px var(--accent)}}
+  #statusbar .prog{display:flex;align-items:center;gap:8px;white-space:nowrap}
+  #statusbar .bar{
+    width:84px;height:8px;border:1px solid var(--dimmer);border-radius:4px;overflow:hidden;background:#05060a;
+  }
+  #statusbar .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease}
+  #statusbar .found{color:var(--accent);font-weight:700}
+  .curs{color:var(--accent);animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  @media(max-width:560px){#statusbar .role{display:none}}
+  #world{
+    width:100%;max-width:920px;
+    background:#05060a;border:1px solid var(--dimmer);border-radius:10px;
+    padding:14px clamp(8px,2vw,18px);box-shadow:0 24px 70px rgba(0,0,0,.6);
+    position:relative;overflow:hidden;
+  }
+  pre#screen{
+    font-family:'JetBrains Mono',monospace;line-height:1.0;
+    font-size:clamp(7px,1.55vw,14px);letter-spacing:0;white-space:pre;
+    margin:0;color:var(--fg);
+  }
+  /* info panel */
+  #panel{
+    position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);
+    max-height:calc(100% - 28px);
+    background:rgba(5,6,10,.96);backdrop-filter:blur(3px);
+    border:1px solid var(--accent);border-radius:8px;
+    display:none;flex-direction:column;padding:clamp(18px,3vw,32px);overflow-y:auto;
+    box-shadow:0 0 40px rgba(94,234,212,.08);
+  }
+  #panel.show{display:flex;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(calc(-50% + 8px))}to{opacity:1;transform:translateY(-50%)}}
+  #panel .eyebrow{color:var(--accent);font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px}
+  #panel h2{font-size:clamp(18px,3.4vw,28px);font-weight:700;margin-bottom:16px;color:#fff;letter-spacing:-.01em}
+  #panel .row{padding:11px 0;border-top:1px solid var(--dimmer)}
+  #panel .row:first-of-type{border-top:none}
+  #panel .rt{font-weight:700;font-size:clamp(13px,1.9vw,16px);color:var(--fg)}
+  #panel .rs{color:var(--accent2);font-size:12px;margin:2px 0 5px}
+  #panel .rb{color:var(--dim);font-size:clamp(12px,1.7vw,14px);line-height:1.55}
+  #panel .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  #panel .tag{border:1px solid var(--dimmer);border-radius:6px;padding:4px 9px;font-size:12px;color:var(--fg)}
+  #panel .closehint{margin-top:20px;color:var(--dim);font-size:12px;padding-top:14px;border-top:1px solid var(--dimmer)}
+  #panel .closehint b{color:var(--accent)}
+  #panel a{color:var(--accent)}
+  /* controls */
+  #controls{width:100%;max-width:920px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .hint{font-size:11px;color:var(--dim);line-height:1.7}
+  .hint b{color:var(--fg)}
+  .dpad{display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:5px}
+  .dpad button{
+    font-family:'JetBrains Mono';font-size:16px;color:var(--fg);background:#0d0f16;
+    border:1px solid var(--dimmer);border-radius:8px;cursor:pointer;
+  }
+  .dpad button:active{background:var(--accent);color:#04110d}
+  .dpad .up{grid-column:2;grid-row:1}.dpad .left{grid-column:1;grid-row:2}
+  .dpad .down{grid-column:2;grid-row:2}.dpad .right{grid-column:3;grid-row:2}
+  @media(min-width:641px){.dpad{display:none}}
+  /* intro toast */
+  #toast{
+    position:absolute;top:16px;left:50%;transform:translateX(-50%);
+    background:rgba(13,15,22,.9);border:1px solid var(--dimmer);
+    color:var(--fg);font-size:clamp(11px,1.7vw,13px);padding:8px 16px;border-radius:999px;
+    white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;
+    transition:opacity .4s;z-index:5;
+  }
+  #toast.hide{opacity:0}
+  .prompt{color:var(--gold)}
+  /* ===== death scare ===== */
+  #world.glitch{animation:shake .35s linear 0s 4}
+  #world.glitch pre#screen{animation:hue .15s steps(2) infinite;color:#ff5470!important}
+  @keyframes shake{
+    0%,100%{transform:translate(0,0)}
+    20%{transform:translate(-3px,2px)}40%{transform:translate(3px,-2px)}
+    60%{transform:translate(-2px,-2px)}80%{transform:translate(2px,2px)}
+  }
+  @keyframes hue{0%{filter:none}50%{filter:invert(1) hue-rotate(90deg)}}
+  #deathOverlay{
+    position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(20,2,8,.82);backdrop-filter:blur(2px);z-index:20;gap:10px;text-align:center;padding:20px;
+  }
+  #deathOverlay.show{display:flex;animation:flick .12s steps(2) 3}
+  @keyframes flick{50%{opacity:.4}}
+  #deathOverlay .dtitle{
+    font-size:clamp(28px,7vw,60px);font-weight:700;color:#ff5470;letter-spacing:.06em;
+    text-shadow:0 0 14px rgba(255,84,112,.6),3px 0 0 #59c2ff,-3px 0 0 #ff5470;
+  }
+  #deathOverlay .dmsg{font-size:clamp(12px,2vw,16px);color:#ffd0d8}
+  #deathOverlay .dsub{font-size:clamp(11px,1.6vw,13px);color:var(--dim);margin-top:4px}
+</style>
+</head>
+<body>
+  <div id="head">
+    <pre id="banner">████████╗██╗  ██╗ █████╗ ███╗   ██╗ █████╗ ██╗   ██╗
+╚══██╔══╝██║  ██║██╔══██╗████╗  ██║██╔══██╗██║   ██║
+   ██║   ███████║███████║██╔██╗ ██║███████║██║   ██║
+   ██║   ██╔══██║██╔══██║██║╚██╗██║██╔══██║╚██╗ ██╔╝
+   ██║   ██║  ██║██║  ██║██║ ╚████║██║  ██║ ╚████╔╝
+   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝  ╚═══╝ <span class="curs">▊</span></pre>
+    <div id="statusbar">
+      <div class="id">thanav<span class="tag">@</span>portfolio<span class="sep">·</span><span class="role"><span class="stat"><span class="led"></span>online</span> &nbsp;usr: <b>cs.york</b> &nbsp;proc: <b>ml + data</b> &nbsp;loc: <b>carfax</b></span></div>
+      <div class="prog">
+        <span>nodes</span>
+        <div class="bar"><div class="fill" id="pfill"></div></div>
+        <span class="found" id="foundtxt">0/5</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="world">
+    <pre id="screen"></pre>
+    <div id="toast">Use <b>arrow keys</b> to walk. Step onto a glowing node and press <b>↑</b> / <b>E</b>.</div>
+    <div id="deathOverlay">
+      <div class="dtitle">☠ YOU DIED</div>
+      <div class="dmsg"></div>
+      <div class="dsub">…just kidding. respawning.</div>
+    </div>
+    <div id="panel">
+      <div class="eyebrow" id="pEyebrow"></div>
+      <h2 id="pTitle"></h2>
+      <div id="pBody"></div>
+      <div class="closehint">press <b>ESC</b> or <b>↓</b> to walk away</div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div class="hint">
+      <b>← ↑ → ↓</b> move &nbsp;·&nbsp; <b>E / ↑</b> enter node &nbsp;·&nbsp; <b>ESC</b> exit<br>
+      walk into <span class="prompt">[ ? ]</span> nodes to reveal my info
+    </div>
+    <div class="dpad">
+      <button class="up" id="bUp">↑</button>
+      <button class="left" id="bLeft">←</button>
+      <button class="down" id="bDown">↓</button>
+      <button class="right" id="bRight">→</button>
+    </div>
+  </div>
+
+<script>
+/* ============ ASCII WORLD ENGINE ============ */
+const screen=document.getElementById('screen');
+const panel=document.getElementById('panel');
+const toast=document.getElementById('toast');
+const COLS=110, ROWS=30;
+
+/* ----- content for each node ----- */
+const NODES={
+  about:{eyebrow:"Node · About",title:"Who is Thanav?",rows:[
+    {rt:"Computer Science @ York University",rs:"Specialized Honours BSc · grad Fall 2027",rb:"Most people code for a paycheck. I code for the moment it clicks — a 30s query down to 0.3s, a neural net that finally converges, a hack that turns elegant. I don't just write code, I dissect it, and that obsession ships real things: a CV triage model, a RAG research agent, a site serving 10K+ users. Curious, ruthless with my own code, never done at \"it works.\""}
+  ]},
+  experience:{eyebrow:"Node · Experience",title:"Where I've worked",rows:[
+    {rt:"CARFAX — Data Mapper Intern",rs:"May–Aug 2026 · London, ON",rb:"Formatted and collected data across JSON, XML, and CSV to feed and support models. Wrote Python & bash to process data across multiple source systems and administered database pipelines in Linux/Unix — shipping inside an Agile team, tracking work in JIRA and reporting to engineering & product stakeholders."},
+    {rt:"Dr.Cars Auto — UI/UX Developer Intern",rs:"Jun–Aug 2025 · Remote, Dubai market",rb:"Built and deployed a fully responsive WordPress car-rental site serving customers across Dubai — dynamic vehicle listings, booking systems, and multilingual (Arabic/English RTL) support. Integrated Google Maps API, dynamic filtering, and SMTP booking; optimized with WebP, lazy loading, and CSS minification to a 95+ PageSpeed score and 40% faster loads for 10K+ monthly users, supporting 20% booking growth in Q3."},
+    {rt:"Lassonde Congress — CS Delegate",rs:"Sep 2024–Apr 2025 · York University",rb:"Represented 500+ CS students in faculty governance, proposing lab and dev-environment upgrades and pushing for emerging tech in the curriculum. Built a Python tool (Google Calendar + Zoom + Selenium) that cut weekly scheduling overhead 75%, from 3 hours to 45 minutes."},
+    {rt:"The Spectrum Mill — Tech & Ops Officer",rs:"Nov 2021–Feb 2023 · Remote, Dubai",rb:"Ran backend infrastructure for a student-funded autism-awareness startup. Deployed relational databases for supporter and org records, engineered ETL pipelines and schemas for cross-departmental data flow, and administered secure, high-availability backend systems — with query optimization and validation keeping referential integrity across 500+ records."}
+  ]},
+  projects:{eyebrow:"Node · Projects",title:"Things I've built",rows:[
+    {rt:"Triage AI",rs:"AI Hack 2024 — 5th of 40+ teams · Python, YOLOv8, MiDaS",rb:"A wound-assessment system for emergency triage: YOLOv8 detection + MiDaS depth estimation scoring severity 0–100, mapped to clinical triage bands. 92% accuracy vs. medical AI benchmarks, with a clinician override built in."},
+    {rt:"EquityLens",rs:"2025–present · Python, SQL, PostgreSQL, Flask, Docker",rb:"A RAG-based financial research agent — SQL schemas and Python pipelines over 13 technical indicators, with Power BI dashboards for non-technical users and Git-versioned CI/CD on Linux."},
+    {rt:"Chess AI",rs:"2023–2024 · CNN + minimax hybrid, PyTorch",rb:"Five iterative releases over six months, evolving from material-counting heuristics to a CNN move-predictor (trained on Lichess games) paired with 5-ply minimax + alpha-beta pruning."}
+  ]},
+  skills:{eyebrow:"Node · Skills",title:"Tools I work with",rows:[
+    {rt:"Languages",tags:["Python","C / C++","Java","SQL","PostgreSQL","MySQL","Bash"]},
+    {rt:"ML / Data",tags:["PyTorch","YOLOv8","MiDaS","OpenCV","NumPy","Pandas","Power BI"]},
+    {rt:"Cloud / Tools",tags:["AWS","Docker","Kubernetes","Git","Flask","Linux","JIRA"]},
+    {rt:"Beyond tech",tags:["Stakeholder comms","Agile / Scrum","Technical writing"]}
+  ]},
+  achievements:{eyebrow:"★ Secret Node · Achievements",title:"Beyond the code",rows:[
+    {rt:"Guinness World Record — Abacus",rs:"Current record-holder · course topper",rb:"I currently hold a Guinness World Record in abacus and topped my cohort, plus a shelf of medals and trophies for abacus achievements. The mental-math discipline is where the obsession with speed and precision started."},
+    {rt:"Toronto Marathon finisher",rb:"Trained for and finished the Toronto Marathon — the same long-game persistence I bring to a six-month project or a stubborn bug."},
+    {rt:"Varsity track & field",rs:"York University Lions",rb:"Competing at the varsity level while carrying a full courseload and an active internship pipeline."},
+    {rt:"Badminton",rb:"Multiple district and inter-school medals across competitive play."},
+    {rt:"Guitar",rs:"Plectrum Level 3 certification",rb:"Certified plectrum guitarist — a creative counterweight to the engineering."}
+  ]},
+  contact:{eyebrow:"Node · Contact",title:"Let's build something",rows:[
+    {rt:"Email",rb:"<a href='mailto:thanav.v@gmail.com'>thanav.v@gmail.com</a>"},
+    {rt:"Links",rb:"<a href='https://github.com/thanav10' target='_blank'>github.com/thanav10</a> · <a href='https://linkedin.com/in/thanav-amaravadi' target='_blank'>linkedin.com/in/thanav-amaravadi</a>"},
+    {rt:"Bonus",rb:"I also made my portfolio as a playable Mario-style game → <a href='portfolio-game.html'>play it ↗</a>"}
+  ]}
+};
+
+/* ----- node positions in the world grid ----- */
+const nodes=[
+  {key:'about',        x:16, y:7,  label:'ABOUT'},
+  {key:'experience',   x:42, y:20, label:'EXPERIENCE'},
+  {key:'projects',     x:68, y:7,  label:'PROJECTS'},
+  {key:'skills',       x:92, y:15, label:'SKILLS'},
+  {key:'contact',      x:72, y:25, label:'CONTACT'},
+  {key:'achievements', x:30, y:24, label:'ACHIEVEMENTS', secret:true}
+];
+const found=new Set();
+let secretRevealed=false;
+/* the 5 non-secret nodes that must be found to unlock the secret */
+const CORE=['about','experience','projects','skills','contact'];
+function coreComplete(){return CORE.every(k=>found.has(k));}
+
+/* ----- player ----- */
+const player={x:8,y:15};
+const spawn={x:8,y:15};
+let paused=false;
+let dead=false;
+
+/* ----- hidden trap zones (invisible until triggered) ----- */
+/* each trap covers a small area so you can't slip between tiles.
+   player moves in steps of 2 on x, so zones are ≥2 wide. */
+const traps=[
+  {x:26, y:12, w:3, h:2},
+  {x:56, y:11, w:3, h:2},
+  {x:84, y:22, w:3, h:2},
+  {x:38, y:6,  w:3, h:1},
+  {x:62, y:22, w:3, h:2},
+  {x:14, y:9,  w:3, h:2}
+];
+function isTrap(x,y){return traps.some(t=> x>=t.x && x<t.x+t.w && y>=t.y && y<t.y+t.h );}
+/* quirky death messages, in Thanav's voice */
+const DEATHS=[
+  "SEGFAULT — you walked into undefined behavior.",
+  "NULL POINTER — there was nothing here. Or was there?",
+  "STACK OVERFLOW — you went too deep. Respawning…",
+  "KERNEL PANIC — nice try. I don't die that easy.",
+  "404 — path not found. Rerouting you back."
+];
+
+/* ----- static decoration (stars/dust) ----- */
+const stars=[];
+for(let i=0;i<70;i++)stars.push({x:(Math.random()*COLS)|0,y:(Math.random()*ROWS)|0,c:Math.random()<.5?'·':'.'});
+
+/* ----- render ----- */
+function render(){
+  // build empty grid
+  const grid=Array.from({length:ROWS},()=>Array(COLS).fill(' '));
+  const col=Array.from({length:ROWS},()=>Array(COLS).fill(null)); // color layer
+
+  // stars
+  for(const s of stars){ if(grid[s.y]) {grid[s.y][s.x]=s.c; col[s.y][s.x]='dim';} }
+
+  // border frame
+  for(let x=0;x<COLS;x++){grid[0][x]='─';grid[ROWS-1][x]='─';}
+  for(let y=0;y<ROWS;y++){grid[y][0]='│';grid[y][COLS-1]='│';}
+  grid[0][0]='┌';grid[0][COLS-1]='┐';grid[ROWS-1][0]='└';grid[ROWS-1][COLS-1]='┘';
+
+  // paths connecting nodes (simple dotted trails from spawn)
+  // draw faint connecting lines between consecutive nodes
+  const chain=[{x:player.x,y:player.y}];
+  function line(ax,ay,bx,by){
+    let x=ax,y=ay;
+    while(x!==bx||y!==by){
+      if(x<bx)x++;else if(x>bx)x--;
+      else if(y<by)y++;else if(y>by)y--;
+      if(grid[y]&&grid[y][x]===' '){grid[y][x]='·';col[y][x]='trail';}
+    }
+  }
+  let prev={x:6,y:15};
+  for(const n of nodes){ if(n.secret&&!secretRevealed)continue; line(prev.x,prev.y,n.x,n.y); prev=n; }
+
+  // nodes
+  for(const n of nodes){
+    if(n.secret&&!secretRevealed)continue;
+    const got=found.has(n.key);
+    const glyph = got? '◆' : '◈';
+    // node marker box: [ ? ]  (secret shows a ★ when first revealed)
+    const inner = got? '✓' : (n.secret? '★' : '?');
+    const cells=['[',' ',inner,' ',']'];
+    for(let i=0;i<cells.length;i++){
+      const gx=n.x-2+i;
+      if(grid[n.y]&&gx>0&&gx<COLS-1){grid[n.y][gx]=cells[i];col[n.y][gx]=got?'found':(n.secret?'secret':'node');}
+    }
+    // label under node
+    const lbl=n.label;
+    const start=n.x-((lbl.length/2)|0);
+    for(let i=0;i<lbl.length;i++){
+      const gx=start+i, gy=n.y+1;
+      if(grid[gy]&&gx>0&&gx<COLS-1){grid[gy][gx]=lbl[i];col[gy][gx]=got?'foundlbl':(n.secret?'secretlbl':'lbl');}
+    }
+  }
+
+  // player
+  if(grid[player.y]&&player.x>0&&player.x<COLS-1){grid[player.y][player.x]='☻';col[player.y][player.x]='player';}
+
+  // serialize with spans for color
+  let html='';
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      const ch=grid[y][x];
+      const c=col[y][x];
+      const e = ch==='<'?'&lt;':ch==='>'?'&gt;':ch==='&'?'&amp;':ch;
+      if(c==='player')html+=`<span style="color:var(--player);font-weight:700">${e}</span>`;
+      else if(c==='node')html+=`<span style="color:var(--gold);font-weight:700">${e}</span>`;
+      else if(c==='secret')html+=`<span style="color:var(--accent2);font-weight:700;text-shadow:0 0 8px rgba(129,140,248,.7)">${e}</span>`;
+      else if(c==='found')html+=`<span style="color:var(--accent);font-weight:700">${e}</span>`;
+      else if(c==='lbl')html+=`<span style="color:var(--dim)">${e}</span>`;
+      else if(c==='secretlbl')html+=`<span style="color:var(--accent2)">${e}</span>`;
+      else if(c==='foundlbl')html+=`<span style="color:var(--accent)">${e}</span>`;
+      else if(c==='trail')html+=`<span style="color:var(--dimmer)">${e}</span>`;
+      else if(c==='dim')html+=`<span style="color:var(--dimmer)">${e}</span>`;
+      else if(ch==='│'||ch==='─'||ch==='┌'||ch==='┐'||ch==='└'||ch==='┘')html+=`<span style="color:var(--dimmer)">${e}</span>`;
+      else html+=e;
+    }
+    html+='\n';
+  }
+  screen.innerHTML=html;
+}
+
+/* ----- interaction ----- */
+function nodeAt(x,y){
+  return nodes.find(n=> (!n.secret||secretRevealed) && y===n.y && x>=n.x-2 && x<=n.x+2 );
+}
+function updateCounter(){
+  const core=CORE.filter(k=>found.has(k)).length;
+  const ft=document.getElementById('foundtxt');
+  const pf=document.getElementById('pfill');
+  if(!secretRevealed){
+    ft.textContent=core+'/5';
+    pf.style.width=(core/5*100)+'%';
+  }else{
+    const total=found.size; // includes achievements once found
+    ft.textContent=total+'/6';
+    pf.style.width=(total/6*100)+'%';
+  }
+}
+function revealSecret(){
+  if(secretRevealed)return;
+  secretRevealed=true;
+  render();
+  showToast("★ SECRET UNLOCKED — a hidden node appeared. Go find it.");
+}
+function tryEnter(){
+  const n=nodeAt(player.x,player.y);
+  if(!n)return;
+  const isNew=!found.has(n.key);
+  openPanel(n.key);
+  if(isNew){
+    found.add(n.key);
+    updateCounter();
+    // unlock the secret once all 5 core nodes are in
+    if(!secretRevealed && coreComplete()){ setTimeout(revealSecret,600); }
+  }
+}
+function openPanel(key){
+  const z=NODES[key];paused=true;
+  document.getElementById('pEyebrow').textContent=z.eyebrow;
+  document.getElementById('pTitle').textContent=z.title;
+  const b=document.getElementById('pBody');b.innerHTML='';
+  z.rows.forEach(r=>{
+    const d=document.createElement('div');d.className='row';
+    let h=`<div class="rt">${r.rt}</div>`;
+    if(r.rs)h+=`<div class="rs">${r.rs}</div>`;
+    if(r.rb)h+=`<div class="rb">${r.rb}</div>`;
+    if(r.tags)h+=`<div class="tags">${r.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`;
+    d.innerHTML=h;b.appendChild(d);
+  });
+  panel.classList.add('show');
+}
+function closePanel(){panel.classList.remove('show');paused=false;}
+
+/* ----- movement ----- */
+function move(dx,dy){
+  if(paused||dead)return;
+  const nx=Math.max(1,Math.min(COLS-2,player.x+dx));
+  const ny=Math.max(1,Math.min(ROWS-2,player.y+dy));
+  player.x=nx;player.y=ny;
+  // hidden trap check
+  if(isTrap(nx,ny)){die();return;}
+  render();
+  // auto-hint when standing on a node
+  const n=nodeAt(player.x,player.y);
+  if(n){showToast(`▲ press ↑ / E to open “${n.label}”`);}
+}
+
+/* ----- the scare ----- */
+function die(){
+  dead=true;paused=true;
+  const world=document.getElementById('world');
+  world.classList.add('glitch');
+  const msg=DEATHS[(Math.random()*DEATHS.length)|0];
+  const ov=document.getElementById('deathOverlay');
+  ov.querySelector('.dmsg').textContent=msg;
+  ov.classList.add('show');
+  // brief scare, then respawn — no progress lost
+  setTimeout(()=>{
+    ov.classList.remove('show');
+    world.classList.remove('glitch');
+    player.x=spawn.x;player.y=spawn.y;
+    dead=false;paused=false;
+    render();
+    showToast("↺ respawned — everything you found is safe.");
+  },1500);
+}
+let toastT=0;
+function showToast(t){toast.textContent=t;toast.classList.remove('hide');toastT=Date.now();
+  setTimeout(()=>{if(Date.now()-toastT>=1800)toast.classList.add('hide');},1900);}
+
+addEventListener('keydown',e=>{
+  const k=e.key;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k))e.preventDefault();
+  if(panel.classList.contains('show')){
+    if(k==='Escape'||k==='ArrowDown'){closePanel();}
+    return;
+  }
+  if(k==='ArrowLeft'||k==='a')move(-2,0);
+  else if(k==='ArrowRight'||k==='d')move(2,0);
+  else if(k==='ArrowUp'||k==='w'){ const n=nodeAt(player.x,player.y); if(n)tryEnter(); else move(0,-1);}
+  else if(k==='ArrowDown'||k==='s')move(0,1);
+  else if(k==='e'||k==='E'||k==='Enter')tryEnter();
+});
+
+/* on-screen dpad */
+const hold=(id,fn)=>{const el=document.getElementById(id);
+  const go=e=>{e.preventDefault();fn();};
+  el.addEventListener('click',go);el.addEventListener('touchstart',go,{passive:false});
+};
+hold('bLeft',()=>move(-2,0));
+hold('bRight',()=>move(2,0));
+hold('bDown',()=>{ if(panel.classList.contains('show'))closePanel(); else move(0,1);});
+hold('bUp',()=>{ const n=nodeAt(player.x,player.y); if(n)tryEnter(); else move(0,-1);});
+
+/* boot */
+render();
+setTimeout(()=>toast.classList.add('hide'),4200);
+</script>
+</body>
+</html>
